@@ -16,7 +16,10 @@ interface CartContextData {
   cart: Product[];
   addProduct: (productId: number) => Promise<void>;
   removeProduct: (productId: number) => void;
-  updateProductAmount: ({ productId, amount }: UpdateProductAmount) => void;
+  updateProductAmount: ({
+    productId,
+    amount,
+  }: UpdateProductAmount) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextData>({} as CartContextData);
@@ -62,6 +65,8 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       const productIndex = cart.findIndex(
         (product) => product.id === productId
       );
+
+      if (productIndex < 0) throw new Error();
 
       let cloneCart = [...cart];
 

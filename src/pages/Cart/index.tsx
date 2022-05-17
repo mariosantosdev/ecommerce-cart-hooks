@@ -40,6 +40,8 @@ const Cart = (): JSX.Element => {
   }
 
   async function handleProductDecrement(product: Product) {
+    if (product.amount === 1) return;
+
     const amount = product.amount - 1;
     await updateProductAmount({ productId: product.id, amount });
   }

@@ -36,27 +36,19 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const addProduct = async (productId: number) => {
     try {
-      const { data: stock } = await api.get<Stock>(`/stock/${productId}`);
+      const hasProduct = cart.find((product) => product.id === productId);
 
-      const productIndex = cart.findIndex(
-        (product) => product.id === productId
+      if (hasProduct) {
+        await updateProductAmount({ productId, amount: hasProduct.amount + 1 });
+        return;
+      }
+
+      const { data: product } = await api.get<Product>(
+        `/products/${productId}`
       );
 
       let cloneCart = [...cart];
-
-      if (productIndex < 0) {
-        const { data: product } = await api.get<Product>(
-          `/products/${productId}`
-        );
-        cloneCart.push({ ...product, amount: 1 });
-      } else {
-        if (cloneCart[productIndex].amount + 1 > stock.amount) {
-          toast.error("Quantidade solicitada fora de estoque");
-          return;
-        }
-
-        cloneCart[productIndex].amount += 1;
-      }
+      cloneCart.push({ ...product, amount: 1 });
 
       setCart([...cloneCart]);
       localStorage.setItem(localStorageKey, JSON.stringify(cloneCart));
@@ -67,9 +59,18 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const removeProduct = (productId: number) => {
     try {
-      // TODO
+      const productIndex = cart.findIndex(
+        (product) => product.id === productId
+      );
+
+      let cloneCart = [...cart];
+
+      cloneCart.splice(productIndex, 1);
+
+      setCart([...cloneCart]);
+      localStorage.setItem(localStorageKey, JSON.stringify(cloneCart));
     } catch {
-      // TODO
+      toast.error("Erro na remoção do produto");
     }
   };
 
@@ -78,9 +79,25 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      // TODO
+      const { data: stock } = await api.get<Stock>(`/stock/${productId}`);
+
+      if (amount > stock.amount) {
+        toast.error("Quantidade solicitada fora de estoque");
+        return;
+      }
+
+      const productIndex = cart.findIndex(
+        (product) => product.id === productId
+      );
+
+      let cloneCart = [...cart];
+
+      cloneCart[productIndex].amount = amount;
+
+      setCart([...cloneCart]);
+      localStorage.setItem(localStorageKey, JSON.stringify(cloneCart));
     } catch {
-      // TODO
+      toast.error("Erro na alteração de quantidade do produto");
     }
   };
 

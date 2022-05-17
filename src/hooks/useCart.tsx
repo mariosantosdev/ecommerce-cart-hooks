@@ -38,11 +38,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     try {
       const { data: stock } = await api.get<Stock>(`/stock/${productId}`);
 
-      if (stock.amount <= 0) {
-        toast.error("Quantidade solicitada fora de estoque");
-        return;
-      }
-
       const productIndex = cart.findIndex(
         (product) => product.id === productId
       );
@@ -55,12 +50,16 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         );
         cloneCart.push({ ...product, amount: 1 });
       } else {
+        if (cloneCart[productIndex].amount + 1 > stock.amount) {
+          toast.error("Quantidade solicitada fora de estoque");
+          return;
+        }
+
         cloneCart[productIndex].amount += 1;
       }
 
       setCart([...cloneCart]);
       localStorage.setItem(localStorageKey, JSON.stringify(cloneCart));
-      await api.put(`/stock/${productId}`, { amount: stock.amount - 1 });
     } catch {
       toast.error("Erro na adição do produto");
     }
